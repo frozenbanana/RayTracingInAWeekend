@@ -5,13 +5,25 @@
 #include "float.h"
 #include "camera.h"
 
+// Generate a vector within the unit cube but only accept
+// vectors in the unit sphere
+vec3 random_in_unit_sphere() {
+    vec3 p;
+    do {
+        // Generate a vector p = [[-1,1], [-1,1], [-1,1]]
+        p = 2.0 * vec3(drand48(), drand48(), drand48()) - vec3(1,1,1);
+    } while (p.squared_length() >= 1.0);
+    return p;
+}
+
 vec3 color(const ray &r, hitable *world)
 {
     // First check if ray hits hitable object
     hit_record rec;
-    if (world->hit(r, 0.0, MAXFLOAT, rec))
+    if (world->hit(r, 0.0001, MAXFLOAT, rec))                              // if ray hits a surface
     {
-        return 0.5 * vec3(rec.normal.x() + 1, rec.normal.y() + 1, rec.normal.z() + 1);
+        vec3 refl = rec.normal + random_in_unit_sphere();   // reflect it slightly
+        return 0.5 * color(ray(rec.point, refl), world);    // and check again where is it bouncing absorbing 50% of its value
     }
     else
     {
@@ -28,16 +40,10 @@ vec3 color(const ray &r, hitable *world)
 
 int main()
 {
-    int nx = 200;
-    int ny = 100;
+    int nx = 400;
+    int ny = 200;
     int ns = 100; // nr of samples for anti-aliasing
     std::cout << "P3\n" << nx << " " << ny << "\n255" << std::endl;
-
-    // Specification of camera and the quad
-    vec3 lower_left_corner(-2.0, -1.0, -1.0);
-    vec3 horizontal(4.0, 0.0, 0.0);
-    vec3 vertical(0.0, 2.0, 0.0);
-    vec3 origin(0.0, 0.0, 0.0);
 
     hitable *list[2];
     list[0] = new sphere(vec3(0, 0, -1), 0.5);
@@ -63,6 +69,8 @@ int main()
             }
             col /= float(ns); // get average color from samples ns
 
+            // Compensate for image viewers gamma correction
+            col = vec3(sqrt(col[0]), sqrt(col[1]), sqrt(col[2]));
             float ir = int(255.99 * col[0]);
             float ig = int(255.99 * col[1]);
             float ib = int(255.99 * col[2]);

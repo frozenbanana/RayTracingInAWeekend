@@ -3,11 +3,13 @@
 
 #include "ray.h"
 
-// When hit save relevant data here
+class material;
+
 struct hit_record {
     float t;
     vec3 point;
     vec3 normal;
+    material* mat_ptr;
 };
 
 // All hitable object must have this function.

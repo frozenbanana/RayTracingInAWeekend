@@ -26,16 +26,18 @@ class material
 class metal : public material
 {
   public:
-    metal(const vec3 &a) : albedo(a) {}
+    metal(const vec3 &a, float f) : albedo(a) { if (f < 1) fuzz = f; else fuzz = 1;}
 
-    // Reflect ray perfectly. Leave color as albedo
+    // Reflect ray. Leave color as albedo
     virtual bool scatter(const ray &r_in, const hit_record &rec, vec3 &attenuation, ray &scattered) const {
         vec3 refl = reflect(unit_vector(r_in.direction()), rec.normal);
-        scattered = ray(rec.point, refl);
+        // Fuzz shrinks the directional vector making the reflection blurry
+        scattered = ray(rec.point, fuzz * refl);
         attenuation = albedo;
             return (dot(scattered.direction(), rec.normal) > 0);
     }
 
+    float fuzz;
     vec3 albedo;
 };
 
